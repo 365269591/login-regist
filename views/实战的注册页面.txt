@@ -1,0 +1,77 @@
+var UserModel = require("../model/User");
+var md5 = require("md5");
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <script src="/javascripts/jquery.min.js"></script>
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    用户名:<input type="text" id="username"/><br />
+    密码:<input type="password" id="psw"/><br />
+    年龄:<input type="number" id="age"/><br />
+    <button onclick="regist()">注册</button>
+  </body>
+  <script type="text/javascript">
+  		function regist(){
+  			$.ajax({
+  				type:"post",
+  				url:"/api/registajax",
+  				async:true,
+  				data : {
+  					username : $("#username").val(),
+  					psw : $("#psw").val(),
+  					age : $("#age").val(),
+  				},
+  				success : function(res){
+  					console.log(res);
+  					if(res.code == 1){
+  						alert(res.message);
+  						location.href = "/login";
+  					}else{
+  						alert(res.message);
+  				}
+  			}
+  			})
+  		}
+  </script>
+</html>
+
+router.get('/regist', function(req, res, next) {
+  res.render('regist', { title: '注册页面' });
+});
+router.post('/api/registajax', function(req, res, next) {
+	  var username = req.body.username;
+	  var psw = req.body.psw;
+	  var age = req.body.age;
+	  var result = {
+	  	code : 1,
+	  	message : "注册成功"
+	  }
+	
+	//检查用户名是否被使用
+	UserModel.find({username:username},function(err,docs){
+		if(docs.length > 0){
+			result.code = -109;
+			result.message = "您的用户名已经被占用,请使用别的用户名注册";
+			res.json(result);
+			return;
+		}
+		//注册用户
+		var um = new UserModel();
+		um.username = username;
+		um.psw = md5(psw);
+		um.age = age;
+		um.save(function(err){
+			if(err){
+				result.code = -110;
+				result.message = "注册失败";
+				res.send("注册失败");
+			}
+			res.json(result);
+		});
+	});
+});
+module.exports = router;

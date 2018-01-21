@@ -1,0 +1,10 @@
+const mongoose = require('mongoose');
+var session = require('express-session')
+
+
+//超重要:中间件的使用必须写在路由的面前
+app.use(session({
+  secret: 'h1723',
+  resave: true,
+  saveUninitialized: false,
+}))

@@ -1,0 +1,75 @@
+app.js
+	var session = require('express-session');
+index.js
+	var UserModel = require("../model/User");
+	var md5 = require("md5");
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <script src="/javascripts/jquery.min.js"></script>
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    用户名:<input type="text" id="username"/><br />
+    密码:<input type="password" id="psw"/><br />
+    <button onclick="login()">登录</button>
+  </body>
+  <script type="text/javascript">
+  		function login(){
+  			$.ajax({
+  				type:"post",
+  				url:"/api/loginajax",
+  				async:true,
+  				data : {
+  					username : $("#username").val(),
+  					psw : $("#psw").val(),
+  				},
+  				success : function(res){
+  					console.log(res);
+  					if(res.code == 1){
+  						alert(res.message);
+  						location.href = "/dashboard?r=" + new Date().getTime();
+  					}else{
+  						alert(res.message);
+  				}
+  			}
+  			})
+  		}
+  </script>
+</html>
+
+router.get('/login', function(req, res, next) {
+  res.render('login', { title: '登录页面' });
+});
+router.post('/api/loginajax', function(req, res, next) {
+	var username = req.body.username;
+	var psw = req.body.psw;
+	var result = {
+		code : 1,
+		message : "登录成功"
+	};
+	UserModel.find({username:username,psw:md5(psw)},function(err,docs){
+		if(docs.length == 0){
+			result.code = -101;
+			result.message = "您的账号或者密码有误,重新登录."
+		}else{
+			//登录成功时候生成session
+			req.session.username = username;
+		}
+		res.json(result);
+	})
+});
+
+router.get('/dashboard', function(req, res, next) {
+  //判断用户是否注册,没注册则返回登录页面
+  console.log(req.session);
+  if(req.session == null || req.session.username == null){
+//	res.render('login', { title: '登录页面' });
+//	console.log(req.session);
+    	res.redirect("/login");//重定向
+  	return;
+  }
+  res.render('dashboard',{});
+});
